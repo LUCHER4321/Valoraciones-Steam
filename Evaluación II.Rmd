@@ -1,0 +1,65 @@
+---
+title: "Evaluación II"
+author: "Gianfranco Benebenti, Luciano Hernández & Sebastián Ríos"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(recommenderlab)
+library(flextable)
+load(".RData")
+```
+
+
+```{r eval=FALSE, include=FALSE}
+Juegos <- read_excel("SteamValoraciones.xlsx", sheet = "DataSet_SteamValoraciones") %>% as.data.frame()
+V0 <- Juegos %>% gather(key = Juego, value = "Valoración", -...1) %>% na.omit() %>% as.data.frame()
+Valoraciones <- data.frame(Usuario = V0$...1 %>% as.character(), V0[, -1])
+Valoraciones$Juego <- Valoraciones$Juego %>% factor()
+Valoraciones %>% summary()
+```
+```{r eval=FALSE, include=FALSE}
+dr <- as(Valoraciones,"realRatingMatrix")
+dr@data %>% head()
+```
+```{r eval=FALSE, include=FALSE}
+m.UBCF <- dr %>% Recommender(method = "UBCF")
+m.IBCF <- dr %>% Recommender(method = "IBCF")
+m.Popular <- dr %>% Recommender(method = "Popular")
+```
+```{r eval=FALSE, include=FALSE}
+N.Usuario <- 1:(Valoraciones$Usuario %>% factor() %>% levels() %>% length() %>% as.numeric()) %>% sample(size = 1) %>% as.numeric()
+Usuario <- dr[N.Usuario]
+N <- Valoraciones$Juego %>% levels() %>% length() %>% as.numeric()
+#UBCF
+R.UBCF <- predict(m.UBCF, Usuario, n = N)
+Top.UBCF <- data.frame(as(R.UBCF, "list"), R.UBCF@ratings)
+names(Top.UBCF) <- c("Juego Recomendado", "Ranking")
+#IBCF
+R.IBCF <- predict(m.IBCF, Usuario, n = N)
+Top.IBCF <- data.frame(as(R.IBCF, "list"), R.IBCF@ratings)
+names(Top.IBCF) <- c("Juego Recomendado", "Ranking")
+#Popular
+R.Popular <- predict(m.Popular, Usuario, n = N)
+Top.Popular <- data.frame(as(R.Popular, "list"), R.Popular@ratings)
+names(Top.Popular) <- c("Juego Recomendado", "Ranking")
+t <- 10
+```
+```{r echo=FALSE}
+Top.UBCF[1:t,] %>% flextable()
+```
+
+
+```{r echo=FALSE}
+Top.IBCF[1:t,] %>% flextable()
+```
+
+
+```{r echo=FALSE}
+Top.Popular[1:t,] %>% flextable()
+```
